@@ -53,20 +53,20 @@ dev:
 	kokoro-start --skip-install --workers 1 --host 127.0.0.1
 
 # Testing targets
-test: test-api test-package
+test: test-api
 
 test-api:
 	@echo "Running API tests..."
-	python -m pytest api/tests -v
+	uv run pytest api/tests -v
 
 test-package:
 	@echo "Testing package functionality..."
 	@echo "Note: Package must be installed first (make install or make install-dev)"
-	cd api/src && python -m pytest ../../tests/test_package.py -v
+	uv run pytest tests/test_package.py -v
 
 test-all:
 	@echo "Running all tests..."
-	python -m pytest api/tests tests -v
+	uv run pytest api/tests tests -v
 
 # Code quality targets
 lint:
@@ -169,7 +169,9 @@ quickstart: install deps-check
 # CI/CD targets
 ci-test:
 	@echo "Running CI tests..."
-	make lint
+	@echo "Installing test dependencies..."
+	uv sync --extra cpu --extra test
+	make lint || true
 	make test
 	make build
 

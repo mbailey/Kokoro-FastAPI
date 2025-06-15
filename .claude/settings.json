@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)",
+      "Bash(rm:*)",
+      "Bash(python:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "WebFetch(domain:docs.astral.sh)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(make:*)",
+      "Bash(git restore:*)",
+      "Bash(find:*)",
+      "mcp__voice-mcp__converse"
+    ],
+    "deny": []
+  }
+}

@@ -145,10 +145,25 @@ Examples:
     return parser
 
 
+def is_uvx_environment():
+    """Check if we're running in a uvx environment."""
+    # Check for uvx-specific environment markers
+    return (
+        os.environ.get("UV_SCRIPT_PYTHON") is not None or
+        'uvx' in sys.executable or
+        '.cache/uv/scripts' in sys.executable
+    )
+
 def main():
     """Main entry point."""
     parser = create_parser()
     args = parser.parse_args()
+    
+    # Auto-detect uvx and adjust behavior
+    if is_uvx_environment():
+        args.skip_install = True  # Can't install in uvx environment
+        if not args.skip_checks:
+            print("Note: Running in uvx environment, some features may be limited")
     
     print("Kokoro-FastAPI TTS Server")
     print("=" * 40)
