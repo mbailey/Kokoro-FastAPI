@@ -6,8 +6,8 @@ import aiofiles
 import torch
 from loguru import logger
 
-from ..core import paths
-from ..core.config import settings
+from kokoro_fastapi.core import paths
+from kokoro_fastapi.core.config import settings
 
 
 class VoiceManager:

@@ -154,7 +154,7 @@ async def get_system_info():
 @router.get("/debug/session_pools")
 async def get_session_pool_info():
     """Get information about ONNX session pools."""
-    from ..inference.model_manager import get_manager
+    from kokoro_fastapi.inference.model_manager import get_manager
 
     manager = await get_manager()
     pools = manager._session_pools

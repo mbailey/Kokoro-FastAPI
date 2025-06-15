@@ -6,8 +6,8 @@ from typing import AsyncGenerator, Dict, List, Tuple, Optional
 
 from loguru import logger
 
-from ...core.config import settings
-from ...structures.schemas import NormalizationOptions
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.structures.schemas import NormalizationOptions
 from .normalizer import normalize_text
 from .phonemizer import phonemize
 from .vocabulary import tokenize

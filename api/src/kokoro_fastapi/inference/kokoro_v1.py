@@ -8,10 +8,10 @@ import torch
 from kokoro import KModel, KPipeline
 from loguru import logger
 
-from ..core import paths
-from ..core.config import settings
-from ..core.model_config import model_config
-from ..structures.schemas import WordTimestamp
+from kokoro_fastapi.core import paths
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.core.model_config import model_config
+from kokoro_fastapi.structures.schemas import WordTimestamp
 from .base import AudioChunk, BaseModelBackend
 
 

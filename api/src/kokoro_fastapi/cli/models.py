@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from ..utils.download import ModelDownloader
-from ..utils.paths import PathResolver
+from kokoro_fastapi.utils.download import ModelDownloader
+from kokoro_fastapi.utils.paths import PathResolver
 
 
 def create_parser() -> argparse.ArgumentParser:

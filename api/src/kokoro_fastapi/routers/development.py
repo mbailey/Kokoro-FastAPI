@@ -12,16 +12,16 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from kokoro import KPipeline
 from loguru import logger
 
-from ..core.config import settings
-from ..inference.base import AudioChunk
-from ..services.audio import AudioNormalizer, AudioService
-from ..services.streaming_audio_writer import StreamingAudioWriter
-from ..services.temp_manager import TempFileWriter
-from ..services.text_processing import smart_split
-from ..services.tts_service import TTSService
-from ..structures import CaptionedSpeechRequest, CaptionedSpeechResponse, WordTimestamp
-from ..structures.custom_responses import JSONStreamingResponse
-from ..structures.text_schemas import (
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.inference.base import AudioChunk
+from kokoro_fastapi.services.audio import AudioNormalizer, AudioService
+from kokoro_fastapi.services.streaming_audio_writer import StreamingAudioWriter
+from kokoro_fastapi.services.temp_manager import TempFileWriter
+from kokoro_fastapi.services.text_processing import smart_split
+from kokoro_fastapi.services.tts_service import TTSService
+from kokoro_fastapi.structures import CaptionedSpeechRequest, CaptionedSpeechResponse, WordTimestamp
+from kokoro_fastapi.structures.custom_responses import JSONStreamingResponse
+from kokoro_fastapi.structures.text_schemas import (
     GenerateFromPhonemesRequest,
     PhonemeRequest,
     PhonemeResponse,
@@ -192,7 +192,7 @@ async def create_captioned_speech(
 
             # If download link requested, wrap generator with temp file writer
             if request.return_download_link:
-                from ..services.temp_manager import TempFileWriter
+                from kokoro_fastapi.services.temp_manager import TempFileWriter
 
                 temp_writer = TempFileWriter(request.response_format)
                 await temp_writer.__aenter__()  # Initialize temp file

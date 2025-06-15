@@ -14,7 +14,7 @@ from numpy import number
 # from text_to_num import text2num
 from torch import mul
 
-from ...structures.schemas import NormalizationOptions
+from kokoro_fastapi.structures.schemas import NormalizationOptions
 
 # Constants
 VALID_TLDS = [

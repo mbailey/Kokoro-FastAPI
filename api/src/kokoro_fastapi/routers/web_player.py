@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from loguru import logger
 
-from ..core.config import settings
-from ..core.paths import get_content_type, get_web_file_path, read_bytes
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.core.paths import get_content_type, get_web_file_path, read_bytes
 
 router = APIRouter(
     tags=["Web Player"],

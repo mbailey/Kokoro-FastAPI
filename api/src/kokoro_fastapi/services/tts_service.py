@@ -12,12 +12,12 @@ import torch
 from kokoro import KPipeline
 from loguru import logger
 
-from ..core.config import settings
-from ..inference.base import AudioChunk
-from ..inference.kokoro_v1 import KokoroV1
-from ..inference.model_manager import get_manager as get_model_manager
-from ..inference.voice_manager import get_manager as get_voice_manager
-from ..structures.schemas import NormalizationOptions
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.inference.base import AudioChunk
+from kokoro_fastapi.inference.kokoro_v1 import KokoroV1
+from kokoro_fastapi.inference.model_manager import get_manager as get_model_manager
+from kokoro_fastapi.inference.voice_manager import get_manager as get_voice_manager
+from kokoro_fastapi.structures.schemas import NormalizationOptions
 from .audio import AudioNormalizer, AudioService
 from .streaming_audio_writer import StreamingAudioWriter
 from .text_processing import tokenize

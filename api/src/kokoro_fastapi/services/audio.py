@@ -13,8 +13,8 @@ from loguru import logger
 from pydub import AudioSegment
 from torch import norm
 
-from ..core.config import settings
-from ..inference.base import AudioChunk
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.inference.base import AudioChunk
 from .streaming_audio_writer import StreamingAudioWriter
 
 

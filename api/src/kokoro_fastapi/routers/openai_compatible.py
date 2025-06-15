@@ -15,13 +15,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 
-from ..core.config import settings
-from ..inference.base import AudioChunk
-from ..services.audio import AudioService
-from ..services.streaming_audio_writer import StreamingAudioWriter
-from ..services.tts_service import TTSService
-from ..structures import OpenAISpeechRequest
-from ..structures.schemas import CaptionedSpeechRequest
+from kokoro_fastapi.core.config import settings
+from kokoro_fastapi.inference.base import AudioChunk
+from kokoro_fastapi.services.audio import AudioService
+from kokoro_fastapi.services.streaming_audio_writer import StreamingAudioWriter
+from kokoro_fastapi.services.tts_service import TTSService
+from kokoro_fastapi.structures import OpenAISpeechRequest
+from kokoro_fastapi.structures.schemas import CaptionedSpeechRequest
 
 
 # Load OpenAI mappings
@@ -214,7 +214,7 @@ async def create_speech(
 
             # If download link requested, wrap generator with temp file writer
             if request.return_download_link:
-                from ..services.temp_manager import TempFileWriter
+                from kokoro_fastapi.services.temp_manager import TempFileWriter
 
                 # Use download_format if specified, otherwise use response_format
                 output_format = request.download_format or request.response_format
@@ -322,7 +322,7 @@ async def create_speech(
             output = audio_data.output + final.output
 
             if request.return_download_link:
-                from ..services.temp_manager import TempFileWriter
+                from kokoro_fastapi.services.temp_manager import TempFileWriter
 
                 # Use download_format if specified, otherwise use response_format
                 output_format = request.download_format or request.response_format
@@ -413,7 +413,7 @@ async def create_speech(
 async def download_audio_file(filename: str):
     """Download a generated audio file from temp storage"""
     try:
-        from ..core.paths import _find_file, get_content_type
+        from kokoro_fastapi.core.paths import _find_file, get_content_type
 
         # Search for file in temp directory
         file_path = await _find_file(

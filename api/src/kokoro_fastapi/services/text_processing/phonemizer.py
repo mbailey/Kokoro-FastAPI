@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import phonemizer
 
 from .normalizer import normalize_text
-from ...structures.schemas import NormalizationOptions
+from kokoro_fastapi.structures.schemas import NormalizationOptions
 
 phonemizers = {}
 
