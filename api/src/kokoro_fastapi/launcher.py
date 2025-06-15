@@ -252,25 +252,18 @@ def main():
     print(f"\nStarting Kokoro-FastAPI server on http://localhost:{args.port}")
     print("Press Ctrl+C to stop\n")
     
-    # Add api/src to Python path
-    sys.path.insert(0, str(paths.api_src_dir))
+    # Set environment variables for the launcher
+    os.environ["KOKORO_HOST"] = args.host
+    os.environ["KOKORO_PORT"] = str(args.port)
+    os.environ["KOKORO_WORKERS"] = str(args.workers)
     
-    # Build uvicorn command - use python -m to ensure proper module context
-    cmd = [
-        sys.executable, "-m", "uvicorn",
-        "main_wrapper:app",
-        "--host", args.host,
-        "--port", str(args.port),
-        "--workers", str(args.workers),
-    ]
+    # Build command to run the app launcher
+    launcher_path = paths.api_src_dir / "app_launcher.py"
+    cmd = [sys.executable, str(launcher_path)]
     
-    # Set PYTHONPATH environment variable
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(paths.api_src_dir)
-    
-    # Run from the api/src directory
+    # Run the launcher
     try:
-        subprocess.run(cmd, cwd=paths.api_src_dir, env=env, check=True)
+        subprocess.run(cmd, check=True)
     except KeyboardInterrupt:
         print("\nShutting down...")
     except subprocess.CalledProcessError as e:
