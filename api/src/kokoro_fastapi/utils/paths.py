@@ -96,6 +96,12 @@ class PathResolver:
                 break
             current = current.parent
             
+        # Check if we're in a uvx cache directory
+        if "archive-v0" in str(Path(__file__)):
+            # We're running from uvx cache, use temp directory
+            import tempfile
+            return Path(tempfile.gettempdir()) / "kokoro-fastapi-temp"
+            
         # Fallback: assume we're in api/src/kokoro_fastapi/utils/
         # So project root is 5 levels up
         fallback = Path(__file__).resolve().parent.parent.parent.parent.parent

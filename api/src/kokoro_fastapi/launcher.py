@@ -210,24 +210,30 @@ def main():
     
     # Check if uv is available (only if not skipping install)
     if not args.skip_install:
-        try:
-            subprocess.run(["uv", "--version"], capture_output=True, check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("\nError: 'uv' is not installed. Please install it first:")
-            print("  curl -LsSf https://astral.sh/uv/install.sh | sh")
-            print("  or")
-            print("  pip install uv")
-            sys.exit(1)
-        
-        # Change to project root for installations
-        os.chdir(paths.project_root)
-        
-        # Install dependencies
-        print("\nInstalling dependencies...")
-        if extras:
-            run_command(f'uv pip install -e ".[{extras}]"', f"Installing {extras.upper()} dependencies")
+        # Check if we have a local project to install from
+        pyproject_path = paths.project_root / "pyproject.toml"
+        if not pyproject_path.exists():
+            print("\nSkipping dependency installation (not in project directory)")
+            print("Assuming dependencies are already installed via uvx")
         else:
-            run_command('uv pip install -e .', "Installing base dependencies")
+            try:
+                subprocess.run(["uv", "--version"], capture_output=True, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print("\nError: 'uv' is not installed. Please install it first:")
+                print("  curl -LsSf https://astral.sh/uv/install.sh | sh")
+                print("  or")
+                print("  pip install uv")
+                sys.exit(1)
+            
+            # Change to project root for installations
+            os.chdir(paths.project_root)
+            
+            # Install dependencies
+            print("\nInstalling dependencies...")
+            if extras:
+                run_command(f'uv pip install -e ".[{extras}]"', f"Installing {extras.upper()} dependencies")
+            else:
+                run_command('uv pip install -e .', "Installing base dependencies")
     
     # Check/download models
     if not paths.models_exist() or args.download:
