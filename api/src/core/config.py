@@ -1,5 +1,27 @@
+import os
+from pathlib import Path
+
 import torch
+from pydantic import Field
 from pydantic_settings import BaseSettings
+
+
+def get_default_model_dir() -> str:
+    """Get default model directory based on environment."""
+    # Check if we're in a Docker container
+    if os.path.exists("/app"):
+        return "/app/api/src/models"
+    # Otherwise use environment variable or relative path
+    return os.environ.get("MODEL_DIR", "src/models")
+
+
+def get_default_voices_dir() -> str:
+    """Get default voices directory based on environment."""
+    # Check if we're in a Docker container
+    if os.path.exists("/app"):
+        return "/app/api/src/voices/v1_0"
+    # Otherwise use environment variable or relative path
+    return os.environ.get("VOICES_DIR", "src/voices/v1_0")
 
 
 class Settings(BaseSettings):
@@ -25,9 +47,9 @@ class Settings(BaseSettings):
         False  # Whether to allow saving combined voices locally
     )
 
-    # Container absolute paths
-    model_dir: str = "/app/api/src/models"  # Absolute path in container
-    voices_dir: str = "/app/api/src/voices/v1_0"  # Absolute path in container
+    # Model and voice paths (flexible for Docker and package modes)
+    model_dir: str = Field(default_factory=get_default_model_dir)
+    voices_dir: str = Field(default_factory=get_default_voices_dir)
 
     # Audio Settings
     sample_rate: int = 24000

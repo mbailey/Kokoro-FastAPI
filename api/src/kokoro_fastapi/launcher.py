@@ -7,6 +7,11 @@ import platform
 import subprocess
 import argparse
 from pathlib import Path
+from typing import Optional, Tuple
+
+from .utils.deps import check_system_dependencies
+from .utils.paths import PathResolver
+from .utils.download import download_models
 
 def detect_gpu():
     """Detect GPU type: cuda, mps, or cpu"""
@@ -38,37 +43,23 @@ def detect_gpu():
                 pass
     return "cpu"
 
-def setup_environment(models_dir=None):
-    """Set up environment variables based on OS and GPU type"""
-    # Get the actual project root (2 levels up from api/src/)
-    launcher_path = Path(__file__).parent.absolute()
-    api_path = launcher_path.parent
-    project_root = api_path.parent
+def setup_environment(paths: PathResolver) -> Tuple[str, str]:
+    """Set up environment variables based on OS and GPU type.
     
+    Args:
+        paths: Path resolver instance
+        
+    Returns:
+        Tuple of (extras, gpu_type)
+    """
     system = platform.system()
     gpu_type = detect_gpu()
     
-    # Determine models directory
-    if models_dir:
-        models_path = Path(models_dir).expanduser().absolute()
-    else:
-        # Check environment variable
-        env_models_dir = os.environ.get("KOKORO_MODELS_DIR")
-        if env_models_dir:
-            models_path = Path(env_models_dir).expanduser().absolute()
-        else:
-            # Default to current location
-            models_path = launcher_path / "models"
+    # Get environment variables from path resolver
+    env = paths.get_environment_vars()
     
-    # Common environment variables
-    env = {
-        "PROJECT_ROOT": str(project_root),
-        "PYTHONPATH": f"{project_root}:{api_path}",
-        "MODEL_DIR": str(models_path),  # Directory containing models
-        "VOICES_DIR": "src/voices/v1_0",
-        "WEB_PLAYER_PATH": str(project_root / "web"),
-        "USE_ONNX": "false",
-    }
+    # Add system-agnostic settings
+    env["USE_ONNX"] = "false"
     
     # GPU-specific settings
     if gpu_type == "cuda":
@@ -93,7 +84,7 @@ def setup_environment(models_dir=None):
     # Apply environment variables
     os.environ.update(env)
     
-    return extras, gpu_type, models_path, project_root
+    return extras, gpu_type
 
 def run_command(cmd, description="", cwd=None):
     """Run a command and handle errors"""
@@ -105,68 +96,156 @@ def run_command(cmd, description="", cwd=None):
         print(f"Error: {description or 'Command'} failed with exit code {e.returncode}")
         sys.exit(1)
 
+def create_parser() -> argparse.ArgumentParser:
+    """Create argument parser."""
+    parser = argparse.ArgumentParser(
+        description="Kokoro-FastAPI TTS Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  kokoro-start                          # Start with defaults
+  kokoro-start --models-dir ~/models    # Custom model directory
+  kokoro-start --gpu --port 8080        # GPU with custom port
+  kokoro-start --skip-checks            # Skip dependency checks
+        """
+    )
+    
+    # Path options
+    parser.add_argument("--models-dir", "-m",
+                        help="Directory containing models (default: ~/models/kokoro or $KOKORO_MODELS_DIR)")
+    parser.add_argument("--voices-dir",
+                        help="Directory containing voices (default: auto-detect)")
+    
+    # Server options
+    parser.add_argument("--host", default="0.0.0.0",
+                        help="Host to bind to (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8880,
+                        help="Port to bind to (default: 8880)")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Number of worker processes (default: 1)")
+    
+    # Device options
+    parser.add_argument("--gpu", action="store_true",
+                        help="Force GPU usage")
+    parser.add_argument("--cpu", action="store_true",
+                        help="Force CPU usage")
+    
+    # Other options
+    parser.add_argument("--skip-checks", action="store_true",
+                        help="Skip system dependency checks")
+    parser.add_argument("--skip-install", action="store_true",
+                        help="Skip package installation")
+    parser.add_argument("--force", action="store_true",
+                        help="Continue despite warnings")
+    parser.add_argument("--download", action="store_true",
+                        help="Force model download even if exists")
+    parser.add_argument("--version", action="version",
+                        version="%(prog)s 0.4.0")
+    
+    return parser
+
+
 def main():
-    """Main entry point"""
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Kokoro-FastAPI Unified Launcher")
-    parser.add_argument("--models-dir", "-m", 
-                        help="Directory to store Kokoro models (default: api/src/models or $KOKORO_MODELS_DIR)")
+    """Main entry point."""
+    parser = create_parser()
     args = parser.parse_args()
     
-    print("Kokoro-FastAPI Unified Launcher")
+    print("Kokoro-FastAPI TTS Server")
     print("=" * 40)
     
-    # Detect system
+    # Initialize path resolver
+    paths = PathResolver(args.models_dir, args.voices_dir)
+    
+    # Check system dependencies
+    if not args.skip_checks:
+        print("\nChecking system dependencies...")
+        deps_ok = check_system_dependencies(skip_optional=False)
+        if not deps_ok and not args.force:
+            print("\nSystem dependency check failed!")
+            print("Use --skip-checks to skip or --force to continue anyway.")
+            sys.exit(1)
+    
+    # Detect system and GPU
     system = platform.system()
-    print(f"Detected OS: {system}")
+    print(f"\nSystem Configuration:")
+    print(f"  OS: {system}")
     
-    # Setup environment and detect GPU
-    extras, gpu_type, models_path, project_root = setup_environment(args.models_dir)
-    print(f"Detected GPU: {gpu_type.upper()}")
-    print(f"Installation mode: {extras.upper() if extras else 'BASE'}")
-    print(f"Models directory: {models_path}")
+    # Setup environment
+    extras, gpu_type = setup_environment(paths)
     
-    # Check if uv is available
-    try:
-        subprocess.run(["uv", "--version"], capture_output=True, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("\nError: 'uv' is not installed. Please install it first:")
-        print("  curl -LsSf https://astral.sh/uv/install.sh | sh")
-        print("  or")
-        print("  pip install uv")
-        sys.exit(1)
+    # Handle GPU/CPU override
+    if args.cpu:
+        gpu_type = "cpu"
+        extras = "cpu"
+        os.environ["USE_GPU"] = "false"
+    elif args.gpu and gpu_type == "cpu":
+        print("  Warning: --gpu specified but no GPU detected")
     
-    # Change to project root for installations
-    os.chdir(project_root)
+    print(f"  GPU: {gpu_type.upper()}")
+    print(f"  Models: {paths.models_dir}")
+    print(f"  Voices: {paths.voices_dir}")
     
-    # Install dependencies
-    if extras:
-        run_command(f'uv pip install -e ".[{extras}]"', f"Installing {extras.upper()} dependencies")
+    # Check if uv is available (only if not skipping install)
+    if not args.skip_install:
+        try:
+            subprocess.run(["uv", "--version"], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("\nError: 'uv' is not installed. Please install it first:")
+            print("  curl -LsSf https://astral.sh/uv/install.sh | sh")
+            print("  or")
+            print("  pip install uv")
+            sys.exit(1)
+        
+        # Change to project root for installations
+        os.chdir(paths.project_root)
+        
+        # Install dependencies
+        print("\nInstalling dependencies...")
+        if extras:
+            run_command(f'uv pip install -e ".[{extras}]"', f"Installing {extras.upper()} dependencies")
+        else:
+            run_command('uv pip install -e .', "Installing base dependencies")
+    
+    # Check/download models
+    if not paths.models_exist() or args.download:
+        print("\nModel files not found.")
+        response = input("Download Kokoro v1.0 models? (~500MB) [Y/n]: ")
+        if response.lower() != 'n':
+            success = download_models(
+                paths.models_dir,
+                version="v1_0",
+                force=args.download
+            )
+            if not success:
+                print("\nFailed to download models!")
+                sys.exit(1)
+        else:
+            print("\nModels are required to run the server.")
+            sys.exit(1)
     else:
-        run_command('uv pip install -e .', "Installing base dependencies")
-    
-    # Download model
-    model_version_path = models_path / "v1_0"
-    if not model_version_path.exists() or not any(model_version_path.iterdir()):
-        # Create directory if it doesn't exist
-        model_version_path.mkdir(parents=True, exist_ok=True)
-        run_command(
-            f"uv run --no-sync python docker/scripts/download_model.py --output {model_version_path}",
-            "Downloading Kokoro model"
-        )
-    else:
-        print("\nModel already downloaded")
-    
-    # Warn about espeak on Unix-like systems
-    if system in ["Linux", "Darwin"]:
-        print("\nNote: espeak-ng should be installed system-wide for best results")
-        print("  Ubuntu/Debian: sudo apt-get install espeak-ng")
-        print("  macOS: brew install espeak-ng")
+        print("\n✓ Models found")
     
     # Start the server
-    print(f"\nStarting Kokoro-FastAPI server on http://localhost:8880")
-    print("Press Ctrl+C to stop")
-    run_command("uv run --no-sync uvicorn api.src.main:app --host 0.0.0.0 --port 8880")
+    print(f"\nStarting Kokoro-FastAPI server on http://localhost:{args.port}")
+    print("Press Ctrl+C to stop\n")
+    
+    # Build uvicorn command
+    cmd = [
+        "uvicorn",
+        "main:app",
+        "--host", args.host,
+        "--port", str(args.port),
+        "--workers", str(args.workers),
+    ]
+    
+    # Run from the api/src directory
+    try:
+        subprocess.run(cmd, cwd=paths.api_src_dir, check=True)
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    except subprocess.CalledProcessError as e:
+        print(f"\nServer failed with exit code {e.returncode}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

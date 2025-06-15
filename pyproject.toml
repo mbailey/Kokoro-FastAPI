@@ -44,6 +44,7 @@ dependencies = [
 
 [project.scripts]
 kokoro-start = "kokoro_fastapi.launcher:main"
+kokoro-models = "kokoro_fastapi.cli.models:main"
 
 [project.optional-dependencies]
 gpu = [
