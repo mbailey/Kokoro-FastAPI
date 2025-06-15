@@ -173,6 +173,10 @@ def main():
         if not args.skip_checks:
             print("Note: Running in uvx environment, some features may be limited")
     
+    # Also skip install if we're not in a git repository
+    if not (Path.cwd() / ".git").exists() and not (Path.cwd() / "pyproject.toml").exists():
+        args.skip_install = True
+    
     print("Kokoro-FastAPI TTS Server")
     print("=" * 40)
     
