@@ -92,6 +92,13 @@ def setup_environment(paths: PathResolver) -> Tuple[str, str]:
     # Apply environment variables
     os.environ.update(env)
     
+    # Ensure PYTHONPATH includes the api/src directory
+    current_pythonpath = os.environ.get("PYTHONPATH", "")
+    if current_pythonpath:
+        os.environ["PYTHONPATH"] = f"{env['PYTHONPATH']}:{current_pythonpath}"
+    else:
+        os.environ["PYTHONPATH"] = env['PYTHONPATH']
+    
     return extras, gpu_type
 
 def run_command(cmd, description="", cwd=None):
@@ -267,53 +274,14 @@ def main():
     os.environ["KOKORO_PORT"] = str(args.port)
     os.environ["KOKORO_WORKERS"] = str(args.workers)
     
-    # Run uvicorn directly instead of using app_launcher.py
-    # This avoids path detection issues when running from uvx
-    
-    # Find the project root to set proper Python path
-    current_file = Path(__file__).resolve()
-    
-    # When installed via uvx, we need to find where api.src.main can be imported from
-    # The package structure in site-packages is different from source
-    if "site-packages" in str(current_file) or "archive-v0" in str(current_file):
-        # We're in an installed environment
-        # Set Python path to allow imports
-        site_packages = current_file.parent.parent.parent
-        sys.path.insert(0, str(site_packages))
-    
     # Import uvicorn and run directly
     try:
         import uvicorn
         
-        # Try to detect the correct app module path
-        app_module = None
-        
-        # First try direct import to see what works
-        try:
-            from kokoro_fastapi.main import app
-            app_module = "kokoro_fastapi.main:app"
-            print(f"Using package import: {app_module}")
-        except ImportError as e1:
-            # Try the original source structure
-            try:
-                # Add the api/src directory to path if needed
-                api_src = paths.api_src_dir
-                if str(api_src) not in sys.path:
-                    sys.path.insert(0, str(api_src))
-                from main import app
-                app_module = "main:app"
-                print(f"Using source import: {app_module}")
-            except ImportError as e2:
-                print(f"\nError: Could not import FastAPI app")
-                print(f"Package import error: {e1}")
-                print(f"Source import error: {e2}")
-                print(f"Python path: {sys.path}")
-                print(f"Current directory: {os.getcwd()}")
-                sys.exit(1)
-        
-        # Run uvicorn with the detected app module path
+        # When installed as a package via uvx, we should be able to import directly
+        # UV handles the PYTHONPATH and package structure for us
         uvicorn.run(
-            app_module,
+            "kokoro_fastapi.main:app",
             host=args.host,
             port=args.port,
             workers=args.workers,
