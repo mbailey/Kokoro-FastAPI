@@ -171,6 +171,10 @@ def is_uvx_environment():
 
 def main():
     """Main entry point."""
+    # Set MPS fallback early for macOS
+    if platform.system() == "Darwin":
+        os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+    
     parser = create_parser()
     args = parser.parse_args()
     

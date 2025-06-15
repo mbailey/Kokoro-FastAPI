@@ -7,10 +7,6 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Set MPS fallback before importing torch (for macOS compatibility)
-if os.environ.get("DEVICE_TYPE") == "mps":
-    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-
 import torch
 import uvicorn
 from fastapi import FastAPI
