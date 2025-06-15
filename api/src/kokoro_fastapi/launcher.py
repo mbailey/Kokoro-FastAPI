@@ -76,7 +76,7 @@ def setup_environment(paths: PathResolver) -> Tuple[str, str]:
     elif gpu_type == "mps":
         env["USE_GPU"] = "true"
         env["DEVICE_TYPE"] = "mps"
-        env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+        env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"  # Enable CPU fallback for unsupported MPS operations
         extras = ""  # Mac GPU uses base install
     else:
         env["USE_GPU"] = "false"

@@ -3,6 +3,10 @@
 import os
 from typing import AsyncGenerator, Dict, Optional, Tuple, Union
 
+# Set MPS fallback before importing torch (for macOS compatibility)
+if os.environ.get("DEVICE_TYPE") == "mps" or os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK") == "1":
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
 import numpy as np
 import torch
 from kokoro import KModel, KPipeline
