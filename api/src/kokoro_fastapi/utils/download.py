@@ -23,8 +23,8 @@ class ModelDownloader:
             "files": [
                 {
                     "name": "kokoro-v1_0.pth", 
-                    "size": 548118894,  # ~522 MB
-                    "sha256": "7c9e528e5c18c9e5aff88f98fb5e42d3601bea90fb0f5141e6e1e5c5ecba5638"
+                    "size": 327212226,  # ~312 MB (actual size on HuggingFace)
+                    "sha256": "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4"
                 },
                 {
                     "name": "config.json",
