@@ -5,37 +5,32 @@ import sys
 import os
 from pathlib import Path
 
-# Set up the Python path before any imports
-api_src_dir = Path(__file__).parent
-sys.path.insert(0, str(api_src_dir))
-os.chdir(api_src_dir)
+# Find the project root (where pyproject.toml is)
+current_file = Path(__file__).resolve()
+api_src_dir = current_file.parent
+api_dir = api_src_dir.parent
+project_root = api_dir.parent
+
+# Add project root to Python path so imports work
+sys.path.insert(0, str(project_root))
+
+# Change to project root directory
+os.chdir(project_root)
 
 # Now we can import and run
 import uvicorn
 
 if __name__ == "__main__":
-    # Import the app with proper path setup
-    from main import app
-    
     # Get host and port from environment or defaults
     host = os.environ.get("KOKORO_HOST", "0.0.0.0")
     port = int(os.environ.get("KOKORO_PORT", "8880"))
     workers = int(os.environ.get("KOKORO_WORKERS", "1"))
     
-    # Run uvicorn directly
-    if workers > 1:
-        uvicorn.run(
-            "main:app",
-            host=host,
-            port=port,
-            workers=workers,
-            reload=False
-        )
-    else:
-        # Single worker - can run the app object directly
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            reload=False
-        )
+    # Run using the full module path like Docker does
+    uvicorn.run(
+        "api.src.main:app",
+        host=host,
+        port=port,
+        workers=workers,
+        reload=False
+    )
