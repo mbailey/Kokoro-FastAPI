@@ -40,7 +40,11 @@ def detect_gpu():
 
 def setup_environment(models_dir=None):
     """Set up environment variables based on OS and GPU type"""
-    project_root = Path(__file__).parent.absolute()
+    # Get the actual project root (2 levels up from api/src/)
+    launcher_path = Path(__file__).parent.absolute()
+    api_path = launcher_path.parent
+    project_root = api_path.parent
+    
     system = platform.system()
     gpu_type = detect_gpu()
     
@@ -54,12 +58,12 @@ def setup_environment(models_dir=None):
             models_path = Path(env_models_dir).expanduser().absolute()
         else:
             # Default to current location
-            models_path = project_root / "api" / "src" / "models"
+            models_path = launcher_path / "models"
     
     # Common environment variables
     env = {
         "PROJECT_ROOT": str(project_root),
-        "PYTHONPATH": f"{project_root}:{project_root}/api",
+        "PYTHONPATH": f"{project_root}:{api_path}",
         "MODEL_DIR": str(models_path),  # Directory containing models
         "VOICES_DIR": "src/voices/v1_0",
         "WEB_PLAYER_PATH": str(project_root / "web"),
@@ -89,14 +93,14 @@ def setup_environment(models_dir=None):
     # Apply environment variables
     os.environ.update(env)
     
-    return extras, gpu_type, models_path
+    return extras, gpu_type, models_path, project_root
 
-def run_command(cmd, description=""):
+def run_command(cmd, description="", cwd=None):
     """Run a command and handle errors"""
     if description:
         print(f"\n{description}...")
     try:
-        subprocess.run(cmd, shell=True, check=True)
+        subprocess.run(cmd, shell=True, check=True, cwd=cwd)
     except subprocess.CalledProcessError as e:
         print(f"Error: {description or 'Command'} failed with exit code {e.returncode}")
         sys.exit(1)
@@ -117,7 +121,7 @@ def main():
     print(f"Detected OS: {system}")
     
     # Setup environment and detect GPU
-    extras, gpu_type, models_path = setup_environment(args.models_dir)
+    extras, gpu_type, models_path, project_root = setup_environment(args.models_dir)
     print(f"Detected GPU: {gpu_type.upper()}")
     print(f"Installation mode: {extras.upper() if extras else 'BASE'}")
     print(f"Models directory: {models_path}")
@@ -131,6 +135,9 @@ def main():
         print("  or")
         print("  pip install uv")
         sys.exit(1)
+    
+    # Change to project root for installations
+    os.chdir(project_root)
     
     # Install dependencies
     if extras:
