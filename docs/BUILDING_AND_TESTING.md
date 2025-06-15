@@ -19,7 +19,7 @@ make install-dev
 # Check system dependencies
 make deps-check
 
-# Download models
+# Download models (optional, server will prompt on first run)
 make models-download
 
 # Run tests
@@ -28,6 +28,8 @@ make test
 # Start the server
 make run
 ```
+
+**Note**: The package must be installed (`make install` or `make install-dev`) before running tests or using the CLI commands.
 
 ## Development Setup
 

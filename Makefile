@@ -53,19 +53,20 @@ dev:
 	kokoro-start --skip-install --workers 1 --host 127.0.0.1
 
 # Testing targets
-test: test-unit test-integration
+test: test-api test-package
 
-test-unit:
-	@echo "Running unit tests..."
-	python -m pytest api/tests/unit -v
-
-test-integration:
-	@echo "Running integration tests..."
-	python -m pytest api/tests/integration -v
+test-api:
+	@echo "Running API tests..."
+	python -m pytest api/tests -v
 
 test-package:
 	@echo "Testing package functionality..."
-	python -m pytest tests/test_package.py -v
+	@echo "Note: Package must be installed first (make install or make install-dev)"
+	cd api/src && python -m pytest ../../tests/test_package.py -v
+
+test-all:
+	@echo "Running all tests..."
+	python -m pytest api/tests tests -v
 
 # Code quality targets
 lint:
