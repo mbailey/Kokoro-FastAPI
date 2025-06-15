@@ -267,24 +267,37 @@ def main():
     os.environ["KOKORO_PORT"] = str(args.port)
     os.environ["KOKORO_WORKERS"] = str(args.workers)
     
-    # Build command to run the app launcher
-    # Find the actual location of app_launcher.py relative to this file
-    launcher_module_dir = Path(__file__).parent.parent  # Go up to api/src
-    launcher_path = launcher_module_dir / "app_launcher.py"
+    # Run uvicorn directly instead of using app_launcher.py
+    # This avoids path detection issues when running from uvx
     
-    if not launcher_path.exists():
-        # Fallback to using the paths
-        launcher_path = paths.api_src_dir / "app_launcher.py"
+    # Find the project root to set proper Python path
+    current_file = Path(__file__).resolve()
     
-    cmd = [sys.executable, str(launcher_path)]
+    # When installed via uvx, we need to find where api.src.main can be imported from
+    # The package structure in site-packages is different from source
+    if "site-packages" in str(current_file) or "archive-v0" in str(current_file):
+        # We're in an installed environment
+        # Set Python path to allow imports
+        site_packages = current_file.parent.parent.parent
+        sys.path.insert(0, str(site_packages))
     
-    # Run the launcher
+    # Import uvicorn and run directly
     try:
-        subprocess.run(cmd, check=True)
+        import uvicorn
+        
+        # Run uvicorn with the app module path
+        uvicorn.run(
+            "api.src.main:app",
+            host=args.host,
+            port=args.port,
+            workers=args.workers,
+            reload=False,
+            log_level="info"
+        )
     except KeyboardInterrupt:
         print("\nShutting down...")
-    except subprocess.CalledProcessError as e:
-        print(f"\nServer failed with exit code {e.returncode}")
+    except Exception as e:
+        print(f"\nServer failed with error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
