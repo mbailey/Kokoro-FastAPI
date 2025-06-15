@@ -9,9 +9,17 @@ import argparse
 from pathlib import Path
 from typing import Optional, Tuple
 
-from .utils.deps import check_system_dependencies
-from .utils.paths import PathResolver
-from .utils.download import download_models
+try:
+    # Try relative imports first (when run as module)
+    from .utils.deps import check_system_dependencies
+    from .utils.paths import PathResolver
+    from .utils.download import download_models
+except ImportError:
+    # Fall back to absolute imports (when run as script)
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from kokoro_fastapi.utils.deps import check_system_dependencies
+    from kokoro_fastapi.utils.paths import PathResolver
+    from kokoro_fastapi.utils.download import download_models
 
 def detect_gpu():
     """Detect GPU type: cuda, mps, or cpu"""
@@ -244,18 +252,25 @@ def main():
     print(f"\nStarting Kokoro-FastAPI server on http://localhost:{args.port}")
     print("Press Ctrl+C to stop\n")
     
-    # Build uvicorn command
+    # Add api/src to Python path
+    sys.path.insert(0, str(paths.api_src_dir))
+    
+    # Build uvicorn command - use python -m to ensure proper module context
     cmd = [
-        "uvicorn",
-        "main:app",
+        sys.executable, "-m", "uvicorn",
+        "main_wrapper:app",
         "--host", args.host,
         "--port", str(args.port),
         "--workers", str(args.workers),
     ]
     
+    # Set PYTHONPATH environment variable
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(paths.api_src_dir)
+    
     # Run from the api/src directory
     try:
-        subprocess.run(cmd, cwd=paths.api_src_dir, check=True)
+        subprocess.run(cmd, cwd=paths.api_src_dir, env=env, check=True)
     except KeyboardInterrupt:
         print("\nShutting down...")
     except subprocess.CalledProcessError as e:
