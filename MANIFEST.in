@@ -1,0 +1,39 @@
+# Include license and documentation
+include LICENSE
+include README.md
+include CHANGELOG.md
+include VERSION
+
+# Include core data files (essential for package operation)
+include api/src/core/*.json
+include api/src/core/*.txt
+
+# Include configuration templates  
+recursive-include api/src/models *.json
+recursive-include api/src/builds *.json
+
+# Include main entry points
+include api/src/main.py
+include api/src/main_wrapper.py
+include api/src/kokoro_server.py
+include api/src/app_launcher.py
+
+# Exclude development and test files
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+global-exclude *.egg-info
+prune api/src/kokoro_fastapi.egg-info
+prune api/temp_files
+prune build
+prune dist
+prune test_env
+prune dev
+prune examples
+prune docs
+prune assets
+prune charts
+prune scripts
+prune ui
+prune web
+prune api/src/voices

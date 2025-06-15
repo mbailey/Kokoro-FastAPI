@@ -285,9 +285,29 @@ def main():
     try:
         import uvicorn
         
-        # Run uvicorn with the app module path
+        # Try to detect the correct app module path
+        app_module = None
+        
+        # First try direct import to see what works
+        try:
+            from kokoro_fastapi.main import app
+            app_module = "kokoro_fastapi.main:app"
+        except ImportError:
+            # Try the original source structure
+            try:
+                # Add the api/src directory to path if needed
+                api_src = paths.api_src_dir
+                if str(api_src) not in sys.path:
+                    sys.path.insert(0, str(api_src))
+                from main import app
+                app_module = "main:app"
+            except ImportError as e:
+                print(f"\nError: Could not import FastAPI app: {e}")
+                sys.exit(1)
+        
+        # Run uvicorn with the detected app module path
         uvicorn.run(
-            "api.src.main:app",
+            app_module,
             host=args.host,
             port=args.port,
             workers=args.workers,
