@@ -268,7 +268,14 @@ def main():
     os.environ["KOKORO_WORKERS"] = str(args.workers)
     
     # Build command to run the app launcher
-    launcher_path = paths.api_src_dir / "app_launcher.py"
+    # Find the actual location of app_launcher.py relative to this file
+    launcher_module_dir = Path(__file__).parent.parent  # Go up to api/src
+    launcher_path = launcher_module_dir / "app_launcher.py"
+    
+    if not launcher_path.exists():
+        # Fallback to using the paths
+        launcher_path = paths.api_src_dir / "app_launcher.py"
+    
     cmd = [sys.executable, str(launcher_path)]
     
     # Run the launcher

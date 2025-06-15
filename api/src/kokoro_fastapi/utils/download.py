@@ -35,7 +35,9 @@ class ModelDownloader:
             "voices": {
                 "url": "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices",
                 "files": [
-                    "af.pt", "af_bella.pt", "af_nicole.pt", "af_sarah.pt", "af_sky.pt",
+                    # These are some of the available voices on HuggingFace
+                    # The full list is much larger, but these provide a good starting set
+                    "af_bella.pt", "af_nicole.pt", "af_sarah.pt", "af_sky.pt",
                     "am_adam.pt", "am_michael.pt", "bf_emma.pt", "bf_isabella.pt",
                     "bm_george.pt", "bm_lewis.pt",
                 ]
